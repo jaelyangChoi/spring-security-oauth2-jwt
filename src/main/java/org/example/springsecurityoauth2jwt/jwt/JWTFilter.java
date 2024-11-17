@@ -24,16 +24,23 @@ public class JWTFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
-        //JWT 에 해당하는 쿠키 찾기
-        Optional<Cookie> jwtCookie = Arrays.stream(request.getCookies())
-                .filter(c -> c.getName().equals("Authorization"))
-                .findFirst();
-        if (jwtCookie.isEmpty()) {
+        if(request.getCookies() == null){
             filterChain.doFilter(request, response);
             return;
         }
 
-        String jwt = jwtCookie.get().getValue();
+        String jwt = null;
+        //JWT 에 해당하는 쿠키 찾기
+        for (Cookie cookie : request.getCookies()) {
+            if(cookie.getName().equals("Authorization")){
+                jwt = cookie.getValue();
+            }
+        }
+
+        if (jwt == null) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         if (jwtUtil.isExpired(jwt)) {
             filterChain.doFilter(request, response);
